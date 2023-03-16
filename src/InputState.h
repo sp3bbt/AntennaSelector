@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 #include "Utils.h"
+#include "Logger.h"
+
 #define CLICK_LIMIT 1000
 #define PRESSED_1_LIMIT 2000
 
@@ -36,12 +38,17 @@ struct SwitchState
             } else {
                 unsigned long now = millis();
                 unsigned long diff = now - millisWhenPressed;
-                if (diff < CLICK_LIMIT) {
+                if (diff < 5) {
+                    c_info("switch event: ignored");
+                } else if (diff < CLICK_LIMIT) {
                     event = clicked;
+                    c_info("switch event clicked");
                 } else if (diff < PRESSED_1_LIMIT) {
                     event = pressed_1;
+                    c_info("switch event pressed_1");
                 } else {
                     event = pressed_2;
+                    c_info("switch event pressed_2");
                 }
             }
         }
@@ -67,6 +74,7 @@ enum InputBit
 class InputState
 {
   private:
+    volatile uint8_t newState{};
     uint8_t lastState{};
     uint8_t currState{};
     SwitchState switches[3];
@@ -100,21 +108,11 @@ class InputState
     uint16_t update()
     {
         lastState = currState;
-        int cnt = 0;
+        creadInput();
         uint8_t input = readInput();
-        do {
-            // delay(2);
-            uint8_t tmp = readInput();
-            if (tmp == input)
-                cnt++;
-            else
-                cnt = 0;
-            input = tmp;
-        } while (cnt < 10);
+        c_info("input: %02x", (unsigned)input);
         currState = input;
-#if 0
-        c_printf("currState: %02x", (unsigned)currState);
-#endif
+        c_debug("currState: %02x", (unsigned)currState);
         return process();
     }
 
@@ -125,7 +123,7 @@ class InputState
         static const byte offsets[] = {sw0_clicked, sw1_clicked, sw2_clicked};
         uint16_t events = 0;
 
-        // c_printf("last: %04x curr: %04x", lastState, currState);
+        c_debug("last: %04x curr: %04x bits: %04x", lastState, currState, (1 << bits[sw]));
 
         if (DIFF_BIT(lastState, currState, bits[sw])) {
             SwitchState::State swState = GET_BIT(currState, bits[sw]) ? SwitchState::pressed : SwitchState::depressed;
@@ -133,10 +131,8 @@ class InputState
 
             if (swEvent != SwitchState::Event::none) {
                 events = 1 << (static_cast<uint16_t>(swEvent) - 1 + offsets[sw]);
+                c_debug("sw: %d: swEvt: %02x inEvt: %04x", sw, (unsigned)swEvent, events);
             }
-            /*
-            c_printf("sw: %d: swEvt: %02x inEvt: %04x", sw, (unsigned)swEvent, events);
-            */
         }
         return events;
     }
@@ -152,13 +148,13 @@ class InputState
 #endif
             if (GET_BIT(currState, InputBit::clk) != GET_BIT(currState, InputBit::dt)) {
                 event = 1 << encoder_left;
-                // c_println("enc: left");
+                c_info("enc: left");
             } else {
                 event = 1 << encoder_right;
-                // c_println("enc: right");
+                c_info("enc: right");
             }
         } else {
-            // c_println("no encoder");
+            c_info("no encoder");
         }
         return event;
     }

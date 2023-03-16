@@ -1,8 +1,9 @@
 #pragma once
 
 #include <LCD.h>
-#include "Logger.h"
 #include <EEPROM.h>
+
+#include "Logger.h"
 #include "AntennaConfig.h"
 #include "InputState.h"
 
@@ -21,13 +22,16 @@ class AntennaSelector
         if ((config.enable & (1 << index)) == 0) {
             index = findEnabledIndex(index, +1);
         }
-        writeOutput(index);
+        setOutput(index);
         _shouldRedraw = true;
     }
     void initLCD()
     {
+	delay(1000);
+        c_printfln("initLCD");
         lcd.begin(LCD_CHARS, LCD_LINES);
         lcd.clear();
+        c_printfln("initLCD done");
     }
   public:
 
@@ -41,6 +45,7 @@ class AntennaSelector
     void processInput()
     {
         uint16_t input_events = inputState.update();
+        c_debug("input_events: %04x", input_events);
         switch (state) {
             case State::normal:
                 processNormalState(input_events);
@@ -229,4 +234,3 @@ void AntennaSelector::render()
     renderLine1(index);
     renderLine2(index);
 }
-
