@@ -1,5 +1,7 @@
 #include "LCD.h"
-
+#include <Arduino.h>
+#include "Print.h"
+#include "Logger.h"
 LCD::LCD()
 #if defined(STANDARD_LCD)
     : lcd(0x27)// I2C address
@@ -39,6 +41,7 @@ void LCD::println(const char* s)
 
 void LCD::begin(uint8_t col, uint8_t row)
 {
+    c_debug("Begin LCD");
     lcd.begin(col, row);
 }
 
@@ -47,6 +50,7 @@ void LCD::clear()
 #if defined(STANDARD_LCD)
     lcd.cls();
 #elif defined(GROVE_LCD)
+c_debug("Clear LCD");
     lcd.clear();
 #endif
 }

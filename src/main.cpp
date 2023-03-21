@@ -1,13 +1,11 @@
 #include <Arduino.h>
-#include <EEPROM.h>
 #include "CLI.h"
 
 
-#define NEGATIVE_OUTPUT_LOGIC 1
 #include "Utils.h"
 #include "Logger.h"
 #include "AntennaSelector.h"
-
+volatile static uint8_t intInput{};
 volatile static bool isInputReady = false;
 // an interrupt function should be as short as possible
 // this one is short to the extreame
@@ -29,7 +27,7 @@ AntennaConfig config {
   }
 };
 // clang-format on
-
+#if 1
 AntennaSelector antennaSelector;
 
 void loop()
@@ -38,23 +36,34 @@ void loop()
     if (isInputReady) {
         isInputReady = false;
         sei();
+        delay(2);
+        uint8_t input = readInput();
 
-        antennaSelector.processInput();
+        antennaSelector.processInput(input);
 
-        c_debug("==========\n\n");
         cli();
     }
     sei();
+
     if (antennaSelector.shouldRedraw()) {
         antennaSelector.redraw();
     }
     CLIreadSerial();
 }
 
+
+#else
+LCD lcd;
+void loop()
+{
+
+
+}
+#endif
 static void inputReady()
 {
-    // antennaSelector.readInput();
     isInputReady = true;
+    intInput = readInput();
 }
 
 void setup()
@@ -65,6 +74,7 @@ void setup()
     /// set PortD pins 2..7 as inputs
     DDRD &= B00000011;
 
+    turnOffAll();
     DDRB |= B00111111;// set PortB pins 0..5 as output
     turnOffAll();
 
@@ -74,6 +84,8 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(3), inputReady, CHANGE);
     CLIsetup();
 
+    c_notice("antennaSelector init...");
     antennaSelector.init();
+    c_notice("antennaSelector init done");
 }
 
