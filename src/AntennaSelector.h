@@ -23,11 +23,6 @@ class AntennaSelector
     AntennaSelector();
     void init();
     void processInput(uint8_t input);
-    int findIndex(int idx, int inc) const;
-    int findEnabledIndex(int idx, int inc) const;
-    void processNormalState(uint16_t input_events);
-    void setOutput(int idx);
-    void processEditState(uint16_t input_events);
     bool shouldRedraw(bool reset = true);
     void redraw();
 
@@ -45,6 +40,14 @@ class AntennaSelector
     int index;
 
     bool _shouldRedraw{true};
+
+    int findIndex(int idx, int inc) const;
+    int findEnabledIndex(int idx, int inc) const;
+    
+    void setOutput(int idx);
+    void processEditState(uint16_t input_events);
+    void processNormalState(uint16_t input_events);
+
     void render();
     void renderLine1(int cnt);
     void renderLine2(int cnt);
